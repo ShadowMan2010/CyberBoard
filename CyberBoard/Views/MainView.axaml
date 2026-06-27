@@ -1,0 +1,137 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:CyberBoard.ViewModels"
+             xmlns:models="using:CyberBoard.Models"
+             xmlns:ctl="using:CyberBoard.Controls"
+             x:Class="CyberBoard.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Grid RowDefinitions="Auto,*,Auto">
+
+    <!-- Custom Title Bar -->
+    <Border Grid.Row="0" Background="{DynamicResource TitleBarBackground}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto">
+        <Border Margin="8,4" Padding="8,4" Background="{DynamicResource AccentColor}" CornerRadius="4">
+          <TextBlock Text="CyberBoard" FontWeight="Bold" Foreground="White" FontSize="13"/>
+        </Border>
+        <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center"
+                   Margin="12,0" Foreground="{DynamicResource TextColor}" FontSize="13"
+                   TextTrimming="CharacterEllipsis"/>
+
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="4" Spacing="2">
+          <Button Command="{Binding UndoCommand}" ToolTip.Tip="Undo" Width="32" Height="28" FontSize="14" Padding="0">↩</Button>
+          <Button Command="{Binding RedoCommand}" ToolTip.Tip="Redo" Width="32" Height="28" FontSize="14" Padding="0">↪</Button>
+        </StackPanel>
+
+        <StackPanel Grid.Column="4" Orientation="Horizontal" Margin="4" Spacing="2">
+          <Button Command="{Binding ZoomOutCommand}" ToolTip.Tip="Zoom Out" Width="28" Height="28" FontSize="16" Padding="0">−</Button>
+          <TextBlock Text="{Binding ZoomLevel, StringFormat='{}{0:P0}'}" VerticalAlignment="Center"
+                     Margin="4,0" Foreground="{DynamicResource TextColor}" FontSize="12"/>
+          <Button Command="{Binding ZoomInCommand}" ToolTip.Tip="Zoom In" Width="28" Height="28" FontSize="16" Padding="0">+</Button>
+          <Button Command="{Binding ZoomToFitCommand}" ToolTip.Tip="Reset Zoom" Width="28" Height="28" FontSize="11" Padding="0">⟲</Button>
+        </StackPanel>
+
+        <StackPanel Grid.Column="5" Orientation="Horizontal" Margin="4" Spacing="2">
+          <Button Command="{Binding SaveDocumentCommand}" ToolTip.Tip="Save" Width="32" Height="28" FontSize="13" Padding="0">💾</Button>
+          <Button Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Toggle Theme" Width="32" Height="28" FontSize="14" Padding="0">🌓</Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Main Content Area -->
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
+      <!-- Tool Panel -->
+      <Border Grid.Column="0" Width="48" Background="{DynamicResource PanelBackground}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0"
+              IsVisible="{Binding ShowToolPanel}">
+        <ScrollViewer>
+          <StackPanel Spacing="2" Margin="4">
+            <TextBlock Text="Tools" FontSize="9" Foreground="{DynamicResource TextColor}"
+                       Opacity="0.5" HorizontalAlignment="Center" Margin="0,4"/>
+            <Button Content="✏" ToolTip.Tip="Pen" Command="{Binding SelectToolCommand}" CommandParameter="Pen" Classes="ToolButton"/>
+            <Button Content="✎" ToolTip.Tip="Pencil" Command="{Binding SelectToolCommand}" CommandParameter="Pencil" Classes="ToolButton"/>
+            <Button Content="🖊" ToolTip.Tip="Marker" Command="{Binding SelectToolCommand}" CommandParameter="Marker" Classes="ToolButton"/>
+            <Button Content="🖍" ToolTip.Tip="Highlighter" Command="{Binding SelectToolCommand}" CommandParameter="Highlighter" Classes="ToolButton"/>
+            <Rectangle Height="1" Fill="{DynamicResource BorderBrush}" Margin="4,2"/>
+            <Button Content="▭" ToolTip.Tip="Rectangle" Command="{Binding SelectToolCommand}" CommandParameter="Rectangle" Classes="ToolButton"/>
+            <Button Content="○" ToolTip.Tip="Circle" Command="{Binding SelectToolCommand}" CommandParameter="Circle" Classes="ToolButton"/>
+            <Button Content="△" ToolTip.Tip="Triangle" Command="{Binding SelectToolCommand}" CommandParameter="Triangle" Classes="ToolButton"/>
+            <Button Content="←" ToolTip.Tip="Arrow" Command="{Binding SelectToolCommand}" CommandParameter="Arrow" Classes="ToolButton"/>
+            <Button Content="╱" ToolTip.Tip="Line" Command="{Binding SelectToolCommand}" CommandParameter="Line" Classes="ToolButton"/>
+            <Rectangle Height="1" Fill="{DynamicResource BorderBrush}" Margin="4,2"/>
+            <Button Content="⬚" ToolTip.Tip="Selection" Command="{Binding SelectToolCommand}" CommandParameter="SelectionTool" Classes="ToolButton"/>
+            <Button Content="⌫" ToolTip.Tip="Eraser" Command="{Binding SelectToolCommand}" CommandParameter="Eraser" Classes="ToolButton"/>
+            <Button Content="☛" ToolTip.Tip="Eyedropper" Command="{Binding SelectToolCommand}" CommandParameter="Eyedropper" Classes="ToolButton"/>
+            <Button Content="✋" ToolTip.Tip="Pan" Command="{Binding SelectToolCommand}" CommandParameter="Pan" Classes="ToolButton"/>
+            <Rectangle Height="1" Fill="{DynamicResource BorderBrush}" Margin="4,2"/>
+            <Button Content="T" ToolTip.Tip="Text" Command="{Binding SelectToolCommand}" CommandParameter="Text" Classes="ToolButton"/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+
+      <!-- Canvas Area -->
+      <Border Grid.Column="1" Background="{DynamicResource CanvasBackground}">
+        <ctl:SkiaCanvas x:Name="CanvasControl"/>
+      </Border>
+
+      <!-- Layer Panel -->
+      <Border Grid.Column="2" Width="200" Background="{DynamicResource PanelBackground}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+              IsVisible="{Binding ShowLayerPanel}">
+        <Grid RowDefinitions="Auto,*,Auto">
+          <Border Grid.Row="0" Padding="8,6" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="Layers" FontWeight="SemiBold" FontSize="12"
+                         Foreground="{DynamicResource TextColor}" VerticalAlignment="Center"/>
+              <Button Grid.Column="1" Command="{Binding AddNewLayerCommand}" ToolTip.Tip="Add Layer"
+                      Width="24" Height="24" FontSize="14" Padding="0">＋</Button>
+            </Grid>
+          </Border>
+          <ListBox Grid.Row="1" ItemsSource="{Binding Layers}" BorderThickness="0"
+                   Background="Transparent">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="models:DrawingLayer">
+                <Border Padding="6,4" Margin="2" BorderThickness="0"
+                        Background="{DynamicResource LayerItemBackground}" CornerRadius="4">
+                  <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                    <Border Width="16" Height="16" CornerRadius="3"
+                            Background="{DynamicResource AccentColor}" Margin="0,0,6,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="11"
+                               Foreground="{DynamicResource TextColor}" VerticalAlignment="Center"/>
+                    <ToggleButton Grid.Column="2" Width="18" Height="18" FontSize="10"
+                                  IsChecked="{Binding IsVisible}" Padding="0">👁</ToggleButton>
+                    <ToggleButton Grid.Column="3" Width="18" Height="18" FontSize="10"
+                                  IsChecked="{Binding IsLocked}" Padding="0">🔒</ToggleButton>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Border Grid.Row="2" Padding="8,4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+            <TextBlock Text="{Binding StrokeCount, StringFormat='{}{0} strokes'}" FontSize="11"
+                       Foreground="{DynamicResource TextColor}" Opacity="0.6"/>
+          </Border>
+        </Grid>
+      </Border>
+    </Grid>
+
+    <!-- Status Bar -->
+    <Border Grid.Row="2" Background="{DynamicResource StatusBarBackground}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+            IsVisible="{Binding ShowStatusBar}">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+        <TextBlock Text="{Binding StatusText}" Margin="8,2" FontSize="11"
+                   Foreground="{DynamicResource TextColor}" Opacity="0.7"/>
+        <TextBlock Grid.Column="1" Text="{Binding PageCount}" Margin="16,2" FontSize="11"
+                   Foreground="{DynamicResource TextColor}" Opacity="0.7"/>
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="4,0">
+          <TextBlock Text="{Binding ZoomLevel, StringFormat='Zoom: {}{0:P0}'}" FontSize="11"
+                     Foreground="{DynamicResource TextColor}" Opacity="0.7"/>
+        </StackPanel>
+        <TextBlock Grid.Column="4" Text="{Binding StrokeCount, StringFormat='Strokes: {}{0}'}"
+                   Margin="8,2" FontSize="11" Foreground="{DynamicResource TextColor}" Opacity="0.7"/>
+      </Grid>
+    </Border>
+
+  </Grid>
+</UserControl>

@@ -1,0 +1,22 @@
+## .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.cache
+*.vs/
+*.DotSettings
+*.nupkg
+
+## IDE
+.idea/
+*.swp
+*.swo
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Build
+packages/
+*.log
