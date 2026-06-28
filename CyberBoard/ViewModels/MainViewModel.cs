@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CyberBoard.Core.Services;
@@ -19,6 +21,7 @@ public partial class MainViewModel : ViewModelBase
     private readonly ToolService _toolService;
     private readonly RenderingService _renderer;
     private readonly FileService _fileService;
+    private readonly ImportService _importService;
     private readonly IServiceProvider _services;
 
     [ObservableProperty] private string _title = "CyberBoard - Untitled";
@@ -47,13 +50,15 @@ public partial class MainViewModel : ViewModelBase
 
     public MainViewModel(DocumentManager document, ThemeService theme,
         ToolService toolService, RenderingService renderer,
-        FileService fileService, IServiceProvider services)
+        FileService fileService, ImportService importService,
+        IServiceProvider services)
     {
         _document = document;
         _theme = theme;
         _toolService = toolService;
         _renderer = renderer;
         _fileService = fileService;
+        _importService = importService;
         _services = services;
 
         _document.DocumentChanged += OnDocumentChanged;
@@ -264,4 +269,85 @@ public partial class MainViewModel : ViewModelBase
     }
 
     public void SetStatus(string status) => StatusText = status;
+
+    [RelayCommand]
+    private async Task ImportImage()
+    {
+        var window = GetWindow();
+        if (window == null) return;
+
+        var files = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            AllowMultiple = true,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Images")
+                {
+                    Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.bmp", "*.webp" }
+                },
+                new FilePickerFileType("PDF Documents")
+                {
+                    Patterns = new[] { "*.pdf" }
+                },
+                new FilePickerFileType("SVG Graphics")
+                {
+                    Patterns = new[] { "*.svg" }
+                }
+            }
+        });
+
+        foreach (var file in files)
+        {
+            var path = file.Path.LocalPath;
+            var items = await _importService.ImportFileAsync(path, 100, 100, 800);
+            foreach (var item in items)
+            {
+                _document.PushUndo();
+                _document.CurrentPage.Layers[^1].Items.Add(item);
+            }
+            if (items.Count > 0)
+                StatusText = $"Imported {Path.GetFileName(path)}";
+        }
+
+        _renderer.InvalidateLayer(_document.CurrentPage.Layers[^1].Id);
+    }
+
+    [RelayCommand]
+    private async Task PasteFromClipboard()
+    {
+        try
+        {
+            var clipboard = TopLevel.GetTopLevel(GetWindow())?.Clipboard;
+            if (clipboard == null) return;
+
+            var hasImage = await clipboard.GetFormatsAsync().ContinueWith(t =>
+                t.Result?.Contains("image/png") == true || t.Result?.Contains("image/bmp") == true);
+
+            if (hasImage)
+            {
+                var bitmap = await clipboard.GetDataAsync("image/png") as byte[];
+                if (bitmap == null) return;
+
+                var items = await _importService.ImportImageFromClipboardAsync(bitmap, 100, 100);
+                foreach (var item in items)
+                {
+                    _document.PushUndo();
+                    _document.CurrentPage.Layers[^1].Items.Add(item);
+                }
+                StatusText = items.Count > 0 ? "Pasted image from clipboard" : "Nothing to paste";
+                _renderer.InvalidateLayer(_document.CurrentPage.Layers[^1].Id);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Paste failed: {ex.Message}";
+        }
+    }
+
+    private static Window? GetWindow()
+    {
+        return TopLevel.GetTopLevel(
+            Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+                ? desktop.MainWindow : null) as Window;
+    }
 }

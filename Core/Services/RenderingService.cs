@@ -7,6 +7,7 @@ public class RenderingService
 {
     private readonly Dictionary<Guid, SKPicture> _layerCache = new();
     private readonly Dictionary<Guid, SKPicture> _strokeCache = new();
+    private readonly Dictionary<Guid, SKImage> _imageCache = new();
     private SKSurface? _surface;
     private int _surfaceWidth;
     private int _surfaceHeight;
@@ -60,7 +61,74 @@ public class RenderingService
             DrawStroke(canvas, stroke);
         }
 
+        foreach (var item in layer.Items)
+        {
+            if (item.Data == null || item.Data.Length == 0) continue;
+            if (!item.Rect.IntersectsWith(viewport)) continue;
+            DrawCanvasItem(canvas, item);
+        }
+
         canvas.Restore();
+        canvas.Restore();
+    }
+
+    private void DrawCanvasItem(SKCanvas canvas, CanvasItem item)
+    {
+        if (!_imageCache.TryGetValue(item.Id, out var image))
+        {
+            try
+            {
+                using var ms = new MemoryStream(item.Data!);
+                image = SKImage.FromEncodedData(ms);
+                if (image != null)
+                    _imageCache[item.Id] = image;
+            }
+            catch
+            {
+                return;
+            }
+        }
+
+        if (image == null) return;
+
+        canvas.Save();
+        float cx = item.X + item.Width / 2;
+        float cy = item.Y + item.Height / 2;
+        canvas.Translate(cx, cy);
+        canvas.RotateDegrees(item.Rotation);
+        canvas.Translate(-cx, -cy);
+
+        using var imgPaint = new SKPaint
+        {
+            Color = new SKColor(255, 255, 255, (byte)(item.Opacity * 255)),
+            IsAntialias = true
+        };
+
+        var dest = new SKRect(item.X, item.Y, item.X + item.Width, item.Y + item.Height);
+
+        if (Math.Abs(item.Opacity - 1f) > 0.001f)
+        {
+            canvas.SaveLayer(imgPaint);
+            canvas.DrawImage(image, dest);
+            canvas.Restore();
+        }
+        else
+        {
+            canvas.DrawImage(image, dest);
+        }
+
+        if (item.IsSelected)
+        {
+            using var selPaint = new SKPaint
+            {
+                Color = new SKColor(0x33, 0x99, 0xFF, 128),
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = 2,
+                PathEffect = SKPathEffect.CreateDash(new[] { 5f, 5f }, 0)
+            };
+            canvas.DrawRect(dest, selPaint);
+        }
+
         canvas.Restore();
     }
 
@@ -73,9 +141,7 @@ public class RenderingService
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             StrokeCap = SKStrokeCap.Round,
-            StrokeJoin = SKStrokeJoin.Round,
-            FilterQuality = SKFilterQuality.High,
-            IsLinearText = true
+            StrokeJoin = SKStrokeJoin.Round
         };
 
         if (stroke.IsEraser)
@@ -226,12 +292,23 @@ public class RenderingService
         _layerCache.Remove(layerId);
     }
 
+    public void InvalidateImage(Guid itemId)
+    {
+        if (_imageCache.TryGetValue(itemId, out var img))
+        {
+            img.Dispose();
+            _imageCache.Remove(itemId);
+        }
+    }
+
     public void ClearCache()
     {
         foreach (var pic in _layerCache.Values) pic.Dispose();
         foreach (var pic in _strokeCache.Values) pic.Dispose();
+        foreach (var img in _imageCache.Values) img.Dispose();
         _layerCache.Clear();
         _strokeCache.Clear();
+        _imageCache.Clear();
     }
 
     public void Dispose()

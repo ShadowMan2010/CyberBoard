@@ -44,6 +44,18 @@ public partial class MainWindow : Window
                 vm.ZoomToFitCommand.Execute(null);
                 e.Handled = true;
                 break;
+            case Avalonia.Input.Key.V when e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control):
+                vm.PasteFromClipboardCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Avalonia.Input.Key.I when e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control):
+                vm.ImportImageCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Avalonia.Input.Key.O when e.KeyModifiers.HasFlag(Avalonia.Input.KeyModifiers.Control):
+                vm.LoadDocumentCommand.Execute(null);
+                e.Handled = true;
+                break;
         }
     }
 }

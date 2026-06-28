@@ -32,6 +32,8 @@
         </StackPanel>
 
         <StackPanel Grid.Column="5" Orientation="Horizontal" Margin="4" Spacing="2">
+          <Button Command="{Binding ImportImageCommand}" ToolTip.Tip="Import Image/PDF" Width="32" Height="28" FontSize="13" Padding="0">📷</Button>
+          <Button Command="{Binding PasteFromClipboardCommand}" ToolTip.Tip="Paste from Clipboard" Width="32" Height="28" FontSize="13" Padding="0">📋</Button>
           <Button Command="{Binding SaveDocumentCommand}" ToolTip.Tip="Save" Width="32" Height="28" FontSize="13" Padding="0">💾</Button>
           <Button Command="{Binding ToggleThemeCommand}" ToolTip.Tip="Toggle Theme" Width="32" Height="28" FontSize="14" Padding="0">🌓</Button>
         </StackPanel>

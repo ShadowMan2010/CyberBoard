@@ -12,6 +12,7 @@ public static class DependencyInjection
         services.AddSingleton<FileService>();
         services.AddTransient<ToolService>();
         services.AddTransient<RenderingService>();
+        services.AddSingleton<ImportService>();
         return services;
     }
 }

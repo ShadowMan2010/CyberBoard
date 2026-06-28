@@ -10,6 +10,7 @@ public class DrawingLayer
     public LayerBlendMode BlendMode { get; set; } = LayerBlendMode.Normal;
     public int Order { get; set; }
     public List<DrawingStroke> Strokes { get; set; } = new();
+    public List<CanvasItem> Items { get; set; } = new();
 
     public DrawingLayer Clone()
     {
@@ -21,7 +22,19 @@ public class DrawingLayer
             IsLocked = IsLocked,
             BlendMode = BlendMode,
             Order = Order,
-            Strokes = Strokes.Select(s => s.Clone()).ToList()
+            Strokes = Strokes.Select(s => s.Clone()).ToList(),
+            Items = Items.Select(i => new CanvasItem
+            {
+                Id = Guid.NewGuid(),
+                LayerId = i.LayerId,
+                Type = i.Type,
+                Data = i.Data,
+                X = i.X, Y = i.Y,
+                Width = i.Width, Height = i.Height,
+                Rotation = i.Rotation,
+                Opacity = i.Opacity,
+                SourcePath = i.SourcePath
+            }).ToList()
         };
     }
 }
